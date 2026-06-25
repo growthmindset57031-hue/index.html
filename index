@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduConnect Hub</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        .active-tab { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans pb-20">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <h1 class="text-xl font-bold tracking-wide">EduConnect Hub</h1>
+        <button onclick="promptAdminAccess()" class="bg-indigo-800 text-xs px-3 py-1 rounded hover:bg-indigo-900 transition">Admin Panel</button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white shadow-sm flex justify-around border-b border-gray-200 sticky top-[60px] z-40">
+        <button id="tab-partners" onclick="switchTab('partners')" class="py-3 px-4 active-tab text-sm">Study Partners</button>
+        <button id="tab-books" onclick="switchTab('books')" class="py-3 px-4 text-sm">Books (Approved)</button>
+        <button id="tab-chat" onclick="switchTab('chat')" class="py-3 px-4 text-sm">Messages</button>
+    </nav>
+
+    <!-- Main Views -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
+
+        <!-- Study Partners Section -->
+        <section id="view-partners" class="space-y-4">
+            <h2 class="text-lg font-semibold text-gray-700">Find a Study Partner</h2>
+            <div id="partners-list" class="space-y-3"></div>
+        </section>
+
+        <!-- Books Library Section -->
+        <section id="view-books" class="space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-700">Public Book Library</h2>
+                <button onclick="openDonateModal()" class="bg-green-600 text-white text-xs px-3 py-1.5 rounded-full font-medium shadow hover:bg-green-700">+ Donate Book</button>
+            </div>
+            <div id="books-list" class="grid grid-cols-1 gap-3"></div>
+        </section>
+
+        <!-- Chat System Section -->
+        <section id="view-chat" class="space-y-4 hidden">
+            <div id="chat-list-view" class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-700">Conversations</h2>
+                <div id="active-chats" class="space-y-2"></div>
+            </div>
+
+            <div id="active-chat-box" class="hidden bg-white rounded-lg shadow border border-gray-200 flex flex-col h-[65vh]">
+                <div class="bg-gray-100 p-3 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                    <span id="chat-header-name" class="font-bold text-gray-700">Chat Log</span>
+                    <button onclick="closeChatBox()" class="text-gray-500 text-sm font-semibold">✕ Close</button>
+                </div>
+                <div id="chat-messages" class="flex-1 p-3 overflow-y-auto space-y-2 text-sm"></div>
+                <div class="p-2 border-t border-gray-200 flex gap-2 bg-gray-50">
+                    <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 border rounded px-3 py-1.5 text-sm outline-none">
+                    <button onclick="sendChatMessage()" class="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm font-medium">Send</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Protected Admin Panel -->
+        <section id="view-admin" class="hidden fixed inset-0 bg-white z-50 p-6 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-red-600">Admin Control</h2>
+                <button onclick="closeAdminPanel()" class="bg-gray-200 text-gray-700 px-3 py-1 rounded">Exit Panel</button>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                    <h3 class="font-bold text-yellow-800 border-b border-yellow-200 pb-1 mb-2">📥 Incoming Donations (Awaiting Approval)</h3>
+                    <div id="admin-queue-list" class="space-y-2 text-sm text-gray-700"></div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-700 border-b pb-1 mb-2">Live Published Library</h3>
+                    <div id="admin-books-list" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Donation Modal Popup -->
+    <div id="donate-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg p-5 w-full max-w-sm space-y-4">
+            <h3 class="text-lg font-bold text-gray-800">Donate a Study Book</h3>
+            <p class="text-xs text-amber-600 font-medium bg-amber-50 p-2 rounded">⚠️ Note: Your submission goes directly to the Admin for approval verification before appearing on the public feed.</p>
+            <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-600">Book Title</label>
+                <input id="form-book-title" type="text" class="w-full border rounded p-2 text-sm">
+                <label class="block text-xs font-medium text-gray-600">Subject Category</label>
+                <input id="form-book-subject" type="text" class="w-full border rounded p-2 text-sm">
+                <label class="block text-xs font-medium text-gray-600">PDF Storage Link</label>
+                <input id="form-book-link" type="url" placeholder="Google Drive URL link" class="w-full border rounded p-2 text-sm">
+            </div>
+            <div class="flex justify-end gap-2 text-sm">
+                <button onclick="closeDonateModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded">Cancel</button>
+                <button onclick="submitBookDonation()" class="bg-green-600 text-white px-4 py-2 rounded">Submit to Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script Engine -->
+    <script>
+        let partners = [
+            { id: 1, name: "Rahul Sharma", subject: "Organic Chemistry", grade: "Class 12", bio: "Preparing for exams. Let's study together!" },
+            { id: 2, name: "Ananya Iyer", subject: "Data Structures", grade: "B.Tech Year 2", bio: "Looking to practice coding algorithms." }
+        ];
+
+        let publicBooks = JSON.parse(localStorage.getItem('cloud_public_books')) || [
+            { id: 101, title: "H.C. Verma Physics Vol 1", subject: "Physics", link: "https://google.com", donor: "Rahul S." }
+        ];
+
+        let privateAdminQueue = JSON.parse(localStorage.getItem('cloud_admin_queue')) || [];
+        let chatMessagesData = JSON.parse(localStorage.getItem('cloud_chats')) || {};
+        let activeChatUser = null;
+        let isAdminAuthenticated = false;
+
+        function persistStorage() {
+            localStorage.setItem('cloud_public_books', JSON.stringify(publicBooks));
+            localStorage.setItem('cloud_admin_queue', JSON.stringify(privateAdminQueue));
+            localStorage.setItem('cloud_chats', JSON.stringify(chatMessagesData));
+        }
+
+        function switchTab(tabName) {
+            ['partners', 'books', 'chat'].forEach(tab => {
+                document.getElementById(`view-${tab}`).classList.add('hidden');
+                document.getElementById(`tab-${tab}`).classList.remove('active-tab');
+            });
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active-tab');
+            
+            if(tabName === 'partners') renderPartners();
+            if(tabName === 'books') renderBooks();
+            if(tabName === 'chat') renderChatList();
+        }
+
+        function renderPartners() {
+            document.getElementById('partners-list').innerHTML = partners.map(p => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-gray-800">${p.name}</h3>
+                        <span class="bg-indigo-50 text-indigo-600 text-xs px-2 py-0.5 rounded-full font-semibold">${p.grade}</span>
+                    </div>
+                    <p class="text-xs text-indigo-500 font-medium mt-0.5">📚 Focus: ${p.subject}</p>
+                    <p class="text-gray-600 text-xs mt-2">${p.bio}</p>
+                    <button onclick="startChat('${p.name}')" class="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-semibold">Message & Connect</button>
+                </div>
+            `).join('');
+        }
+
+        function renderBooks() {
+            document.getElementById('books-list').innerHTML = publicBooks.map(b => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-gray-800 text-sm">${b.title}</h4>
+                        <p class="text-xs text-gray-500">Subject: ${b.subject}</p>
+                    </div>
+                    <a href="${b.link}" target="_blank" class="bg-indigo-50 text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-medium">Get PDF</a>
+                </div>
+            `).join('');
+        }
+
+        function submitBookDonation() {
+            const title = document.getElementById('form-book-title').value.trim();
+            const subject = document.getElementById('form-book-subject').value.trim();
+            const link = document.getElementById('form-book-link').value.trim();
+
+            if(!title || !link) { alert('Please supply a title and web link.'); return; }
+
